@@ -1,0 +1,68 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "Inter", system-ui, sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  color-scheme: light;
+  color: #374151;
+  background-color: #f9f7ff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-gradient-hero {
+    background: linear-gradient(135deg, #fdfcff 0%, #f3f0ff 30%, #e9d5ff 60%, #f3f0ff 100%);
+  }
+
+  .bg-gradient-card {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(250, 245, 255, 0.6));
+  }
+
+  .bg-gradient-purple {
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  }
+
+  .glow-effect {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.3), 0 0 40px rgba(168, 85, 247, 0.1);
+  }
+
+  .glow-text {
+    text-shadow: 0 0 10px rgba(168, 85, 247, 0.3), 0 0 20px rgba(168, 85, 247, 0.1);
+  }
+
+  .card-shadow {
+    box-shadow: 0 4px 20px rgba(168, 85, 247, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .card-shadow-hover {
+    box-shadow: 0 10px 40px rgba(168, 85, 247, 0.15), 0 4px 10px rgba(0, 0, 0, 0.08);
+  }
+}
