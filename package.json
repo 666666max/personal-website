@@ -3,15 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://666666max.github.io/personal-website",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check": "tsc -b --noEmit",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "check": "tsc -b --noEmit"
   },
   "dependencies": {
     "clsx": "^2.1.1",
