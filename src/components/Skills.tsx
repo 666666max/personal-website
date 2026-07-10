@@ -73,7 +73,7 @@ const skillCategories = [
 ];
 
 const featuredSkills = [
-  { name: "AI生图", count: "500+" },
+  { name: "AI生图", count: "数千+" },
   { name: "文献研读", count: "220+" },
   { name: "时空数据", count: "专业级" },
   { name: "编程项目", count: "50+" },
