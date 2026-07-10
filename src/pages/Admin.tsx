@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Image, FileText, Plus, Trash2, Edit, LogOut, Save, X, Brush, Upload, Eye } from "lucide-react";
+import { Image, FileText, Plus, Trash2, Edit, LogOut, Save, X, Brush, Upload, Eye, Sparkles, BookOpen, Feather } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Work } from "@/types";
 
@@ -17,15 +17,23 @@ export default function Admin() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    type: "ai-art" as "ai-art" | "hand-draw" | "literary",
+    type: "visual" as "visual" | "illustrated" | "literary",
+    subtype: "" as "" | "poetry" | "novel",
     content: "",
     tags: "",
+    bg_style: "" as "" | "elegant" | "dreamy" | "minimal" | "warm" | "night",
+    bg_image_url: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [bgImageFile, setBgImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUser(user);
@@ -38,6 +46,7 @@ export default function Admin() {
   }, []);
 
   const fetchWorks = async () => {
+    if (!supabase) return;
     const { data, error } = await supabase
       .from("works")
       .select("*")
@@ -52,6 +61,10 @@ export default function Admin() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!supabase) {
+      setError("请先配置Supabase");
+      return;
+    }
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -72,10 +85,15 @@ export default function Admin() {
   };
 
   const handleAddWork = async () => {
+    if (!supabase) {
+      setError("请先配置Supabase");
+      return;
+    }
     setUploading(true);
     let imageUrl: string | undefined;
+    let bgImageUrl: string | undefined;
 
-    if (imageFile && formData.type !== "literary") {
+    if (imageFile && (formData.type === "visual" || formData.type === "illustrated")) {
       const fileExt = imageFile.name.split(".").pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
@@ -97,15 +115,40 @@ export default function Admin() {
       imageUrl = publicUrl;
     }
 
+    if (bgImageFile && formData.type === "literary") {
+      const fileExt = bgImageFile.name.split(".").pop();
+      const fileName = `bg-${Date.now()}.${fileExt}`;
+      const { error: bgUploadError } = await supabase.storage
+        .from("works")
+        .upload(`images/${fileName}`, bgImageFile, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (bgUploadError) {
+        setError("背景图片上传失败");
+        setUploading(false);
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("works")
+        .getPublicUrl(`images/${fileName}`);
+      bgImageUrl = publicUrl;
+    }
+
     const { error: insertError } = await supabase
       .from("works")
       .insert({
         title: formData.title,
         description: formData.description,
         type: formData.type,
-        content: formData.type === "literary" ? formData.content : undefined,
+        subtype: formData.subtype || null,
+        content: (formData.type === "literary" || formData.type === "illustrated") ? formData.content : undefined,
         image_url: imageUrl,
         tags: formData.tags.split(",").map(t => t.trim()).filter(t => t),
+        bg_style: formData.bg_style || null,
+        bg_image_url: bgImageUrl || formData.bg_image_url || null,
       });
 
     if (insertError) {
@@ -119,11 +162,12 @@ export default function Admin() {
   };
 
   const handleUpdateWork = async () => {
-    if (!editingWork) return;
+    if (!editingWork || !supabase) return;
     setUploading(true);
     let imageUrl = editingWork.image_url;
+    let bgImageUrl = editingWork.bg_image_url;
 
-    if (imageFile && editingWork.type !== "literary") {
+    if (imageFile && (editingWork.type === "visual" || editingWork.type === "illustrated")) {
       const fileExt = imageFile.name.split(".").pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
@@ -145,15 +189,40 @@ export default function Admin() {
       imageUrl = publicUrl;
     }
 
+    if (bgImageFile && editingWork.type === "literary") {
+      const fileExt = bgImageFile.name.split(".").pop();
+      const fileName = `bg-${Date.now()}.${fileExt}`;
+      const { error: bgUploadError } = await supabase.storage
+        .from("works")
+        .upload(`images/${fileName}`, bgImageFile, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (bgUploadError) {
+        setError("背景图片上传失败");
+        setUploading(false);
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("works")
+        .getPublicUrl(`images/${fileName}`);
+      bgImageUrl = publicUrl;
+    }
+
     const { error: updateError } = await supabase
       .from("works")
       .update({
         title: formData.title,
         description: formData.description,
         type: formData.type,
-        content: formData.type === "literary" ? formData.content : undefined,
+        subtype: formData.subtype || null,
+        content: (formData.type === "literary" || formData.type === "illustrated") ? formData.content : undefined,
         image_url: imageUrl,
         tags: formData.tags.split(",").map(t => t.trim()).filter(t => t),
+        bg_style: formData.bg_style || null,
+        bg_image_url: bgImageUrl || formData.bg_image_url || null,
       })
       .eq("id", editingWork.id);
 
@@ -168,7 +237,7 @@ export default function Admin() {
   };
 
   const handleDeleteWork = async (id: string) => {
-    if (!confirm("确定要删除这件作品吗？")) return;
+    if (!supabase || !confirm("确定要删除这件作品吗？")) return;
     const { error } = await supabase.from("works").delete().eq("id", id);
     if (!error) {
       fetchWorks();
@@ -181,10 +250,14 @@ export default function Admin() {
       title: work.title,
       description: work.description,
       type: work.type,
+      subtype: work.subtype || "",
       content: work.content || "",
       tags: work.tags?.join(", ") || "",
+      bg_style: work.bg_style || "",
+      bg_image_url: work.bg_image_url || "",
     });
     setImageFile(null);
+    setBgImageFile(null);
     setShowAddForm(true);
   };
 
@@ -192,29 +265,50 @@ export default function Admin() {
     setFormData({
       title: "",
       description: "",
-      type: "ai-art",
+      type: "visual",
+      subtype: "",
       content: "",
       tags: "",
+      bg_style: "",
+      bg_image_url: "",
     });
     setImageFile(null);
+    setBgImageFile(null);
     setError("");
   };
 
-  const getTypeLabel = (type: string) => {
+  const getTypeLabel = (type: string, subtype?: string) => {
+    if (type === "literary" && subtype) {
+      return subtype === "poetry" ? "诗歌" : "微小说";
+    }
     switch (type) {
-      case "ai-art": return "AI生图";
-      case "hand-draw": return "手绘作品";
+      case "visual": return "视觉作品";
+      case "illustrated": return "图文创作";
       case "literary": return "文学创作";
       default: return type;
     }
   };
 
-  const getTypeColor = (type: string) => {
+  const getTypeColor = (type: string, subtype?: string) => {
+    if (type === "literary" && subtype) {
+      return subtype === "poetry" ? "bg-pink-100 text-pink-600" : "bg-blue-100 text-blue-600";
+    }
     switch (type) {
-      case "ai-art": return "bg-accent-100 text-accent-600";
-      case "hand-draw": return "bg-purple-100 text-purple-600";
+      case "visual": return "bg-accent-100 text-accent-600";
+      case "illustrated": return "bg-purple-100 text-purple-600";
       case "literary": return "bg-primary-100 text-primary-600";
       default: return "bg-gray-100 text-gray-600";
+    }
+  };
+
+  const getBgStyleLabel = (style?: string) => {
+    switch (style) {
+      case "elegant": return "典雅";
+      case "dreamy": return "梦幻";
+      case "minimal": return "极简";
+      case "warm": return "温暖";
+      case "night": return "暗夜";
+      default: return "默认";
     }
   };
 
@@ -395,8 +489,8 @@ export default function Admin() {
                         {work.description}
                       </p>
                       <div className="flex items-center justify-between">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getTypeColor(work.type)}`}>
-                          {getTypeLabel(work.type)}
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getTypeColor(work.type, work.subtype)}`}>
+                          {getTypeLabel(work.type, work.subtype)}
                         </span>
                         <span className="text-gray-400 text-xs">
                           {new Date(work.created_at).toLocaleDateString("zh-CN")}
@@ -435,7 +529,7 @@ export default function Admin() {
                     initial={{ scale: 0.9, y: 20 }}
                     animate={{ scale: 1, y: 0 }}
                     exit={{ scale: 0.9, y: 20 }}
-                    className="w-full max-w-lg bg-white rounded-2xl p-6 card-shadow"
+                    className="w-full max-w-lg bg-white rounded-2xl p-6 card-shadow max-h-[90vh] overflow-y-auto"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center justify-between mb-6">
@@ -477,21 +571,21 @@ export default function Admin() {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">作品类型</label>
-                        <div className="flex gap-2">
-                          {(["ai-art", "hand-draw", "literary"] as const).map((type) => (
+                        <label className="block text-sm font-medium text-gray-700 mb-2">作品分类</label>
+                        <div className="flex gap-2 flex-wrap">
+                          {(["visual", "illustrated", "literary"] as const).map((type) => (
                             <button
                               key={type}
                               type="button"
-                              onClick={() => setFormData({ ...formData, type })}
+                              onClick={() => setFormData({ ...formData, type, subtype: type === "literary" ? formData.subtype : "", bg_style: type === "literary" ? formData.bg_style : "" })}
                               className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${
                                 formData.type === type
                                   ? "bg-gradient-purple text-white border-primary-500"
                                   : "bg-white text-gray-600 border-primary-200 hover:border-primary-300"
                               }`}
                             >
-                              {type === "ai-art" && <Image className="w-4 h-4" />}
-                              {type === "hand-draw" && <Brush className="w-4 h-4" />}
+                              {type === "visual" && <Image className="w-4 h-4" />}
+                              {type === "illustrated" && <BookOpen className="w-4 h-4" />}
                               {type === "literary" && <FileText className="w-4 h-4" />}
                               <span className="text-sm">{getTypeLabel(type)}</span>
                             </button>
@@ -499,7 +593,33 @@ export default function Admin() {
                         </div>
                       </div>
 
-                      {formData.type !== "literary" && (
+                      {formData.type === "literary" && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">作品子类型</label>
+                          <div className="flex gap-2">
+                            {(["poetry", "novel"] as const).map((subtype) => (
+                              <button
+                                key={subtype}
+                                type="button"
+                                onClick={() => setFormData({ ...formData, subtype })}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${
+                                  formData.subtype === subtype
+                                    ? subtype === "poetry" 
+                                      ? "bg-pink-500 text-white border-pink-500"
+                                      : "bg-blue-500 text-white border-blue-500"
+                                    : "bg-white text-gray-600 border-primary-200 hover:border-primary-300"
+                                }`}
+                              >
+                                {subtype === "poetry" && <Feather className="w-4 h-4" />}
+                                {subtype === "novel" && <BookOpen className="w-4 h-4" />}
+                                <span className="text-sm">{subtype === "poetry" ? "诗歌" : "微小说"}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {(formData.type === "visual" || formData.type === "illustrated") && (
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             作品图片
@@ -542,16 +662,106 @@ export default function Admin() {
                         </div>
                       )}
 
-                      {formData.type === "literary" && (
+                      {(formData.type === "literary" || formData.type === "illustrated") && (
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">作品内容</label>
                           <textarea
                             value={formData.content}
                             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                            className="w-full px-4 py-3 border border-primary-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none resize-none h-40"
-                            placeholder="输入文学作品内容，支持换行"
+                            className="w-full px-4 py-3 border border-primary-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none resize-none h-64"
+                            placeholder={formData.type === "literary" ? "输入文学作品内容，支持换行，上限1万字" : "输入图文描述内容，支持换行"}
+                            maxLength={10000}
                             required
                           />
+                          <p className="text-gray-400 text-xs mt-1 text-right">
+                            {formData.content.length}/10000
+                          </p>
+                        </div>
+                      )}
+
+                      {formData.type === "literary" && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">背景风格</label>
+                          <div className="flex gap-2 flex-wrap">
+                            {(["elegant", "dreamy", "minimal", "warm", "night"] as const).map((style) => (
+                              <button
+                                key={style}
+                                type="button"
+                                onClick={() => setFormData({ ...formData, bg_style: style, bg_image_url: "" })}
+                                className={`px-3 py-2 rounded-lg border text-sm transition-all ${
+                                  formData.bg_style === style && !formData.bg_image_url
+                                    ? "bg-primary-500 text-white border-primary-500"
+                                    : "bg-white text-gray-600 border-primary-200 hover:border-primary-300"
+                                }`}
+                              >
+                                {getBgStyleLabel(style)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {formData.type === "literary" && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            自定义背景图片
+                            {formData.bg_image_url && (
+                              <div className="flex items-center gap-2 ml-2">
+                                <a
+                                  href={formData.bg_image_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary-600 hover:underline flex items-center gap-1 inline-flex"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  <span className="text-sm">查看</span>
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData({ ...formData, bg_image_url: "", bg_style: "" })}
+                                  className="text-red-500 hover:text-red-700 text-sm"
+                                >
+                                  移除
+                                </button>
+                              </div>
+                            )}
+                          </label>
+                          <div
+                            onClick={() => document.getElementById("bg-image-upload")?.click()}
+                            className="border-2 border-dashed border-primary-200 rounded-xl p-8 text-center cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-all"
+                          >
+                            {bgImageFile ? (
+                              <div>
+                                <Upload className="w-10 h-10 mx-auto mb-2 text-primary-500" />
+                                <p className="text-gray-600">{bgImageFile.name}</p>
+                              </div>
+                            ) : formData.bg_image_url ? (
+                              <div>
+                                <img
+                                  src={formData.bg_image_url}
+                                  alt="当前背景"
+                                  className="w-24 h-24 mx-auto mb-3 rounded-lg object-cover"
+                                />
+                                <p className="text-gray-600">点击更换背景图片</p>
+                              </div>
+                            ) : (
+                              <div>
+                                <Upload className="w-10 h-10 mx-auto mb-2 text-primary-500" />
+                                <p className="text-gray-600">点击上传自定义背景图片</p>
+                                <p className="text-gray-400 text-sm mt-1">支持 JPG, PNG, GIF</p>
+                              </div>
+                            )}
+                            <input
+                              id="bg-image-upload"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                setBgImageFile(e.target.files?.[0] || null);
+                                setFormData({ ...formData, bg_style: "" });
+                              }}
+                            />
+                          </div>
                         </div>
                       )}
 
