@@ -321,7 +321,27 @@ export default function Creativity() {
           )}
         </AnimatePresence>
 
-        <AnimatePresence>
+        <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="text-center mt-12"
+      >
+        <a
+          href="/portfolio"
+          className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-purple text-white rounded-xl font-medium hover:shadow-lg hover:shadow-primary-500/30 transition-all duration-300 group"
+        >
+          <span>查看完整作品集</span>
+          <motion.span
+            animate={{ x: [0, 5, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            →
+          </motion.span>
+        </a>
+      </motion.div>
+
+      <AnimatePresence>
           {selectedImage && (
             <motion.div
               initial={{ opacity: 0 }}
