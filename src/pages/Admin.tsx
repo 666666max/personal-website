@@ -94,47 +94,59 @@ export default function Admin() {
     let bgImageUrl: string | undefined;
 
     if (imageFile && (formData.type === "visual" || formData.type === "illustrated")) {
-      const fileExt = imageFile.name.split(".").pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from("works")
-        .upload(`images/${fileName}`, imageFile, {
-          cacheControl: "3600",
-          upsert: false,
+      try {
+        const fileExt = imageFile.name.split(".").pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("works")
+          .upload(`images/${fileName}`, imageFile, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("works")
+          .getPublicUrl(`images/${fileName}`);
+        imageUrl = publicUrl;
+      } catch (uploadError) {
+        const reader = new FileReader();
+        imageUrl = await new Promise((resolve) => {
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(imageFile);
         });
-
-      if (uploadError) {
-        setError("图片上传失败");
-        setUploading(false);
-        return;
       }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("works")
-        .getPublicUrl(`images/${fileName}`);
-      imageUrl = publicUrl;
     }
 
     if (bgImageFile && formData.type === "literary") {
-      const fileExt = bgImageFile.name.split(".").pop();
-      const fileName = `bg-${Date.now()}.${fileExt}`;
-      const { error: bgUploadError } = await supabase.storage
-        .from("works")
-        .upload(`images/${fileName}`, bgImageFile, {
-          cacheControl: "3600",
-          upsert: false,
+      try {
+        const fileExt = bgImageFile.name.split(".").pop();
+        const fileName = `bg-${Date.now()}.${fileExt}`;
+        const { error: bgUploadError } = await supabase.storage
+          .from("works")
+          .upload(`images/${fileName}`, bgImageFile, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (bgUploadError) {
+          throw bgUploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("works")
+          .getPublicUrl(`images/${fileName}`);
+        bgImageUrl = publicUrl;
+      } catch (bgUploadError) {
+        const reader = new FileReader();
+        bgImageUrl = await new Promise((resolve) => {
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(bgImageFile);
         });
-
-      if (bgUploadError) {
-        setError("背景图片上传失败");
-        setUploading(false);
-        return;
       }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("works")
-        .getPublicUrl(`images/${fileName}`);
-      bgImageUrl = publicUrl;
     }
 
     const { error: insertError } = await supabase
@@ -152,7 +164,7 @@ export default function Admin() {
       });
 
     if (insertError) {
-      setError("添加作品失败");
+      setError(`添加作品失败: ${insertError.message}`);
     } else {
       setShowAddForm(false);
       resetForm();
@@ -168,47 +180,59 @@ export default function Admin() {
     let bgImageUrl = editingWork.bg_image_url;
 
     if (imageFile && (editingWork.type === "visual" || editingWork.type === "illustrated")) {
-      const fileExt = imageFile.name.split(".").pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from("works")
-        .upload(`images/${fileName}`, imageFile, {
-          cacheControl: "3600",
-          upsert: false,
+      try {
+        const fileExt = imageFile.name.split(".").pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("works")
+          .upload(`images/${fileName}`, imageFile, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("works")
+          .getPublicUrl(`images/${fileName}`);
+        imageUrl = publicUrl;
+      } catch (uploadError) {
+        const reader = new FileReader();
+        imageUrl = await new Promise((resolve) => {
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(imageFile);
         });
-
-      if (uploadError) {
-        setError("图片上传失败");
-        setUploading(false);
-        return;
       }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("works")
-        .getPublicUrl(`images/${fileName}`);
-      imageUrl = publicUrl;
     }
 
     if (bgImageFile && editingWork.type === "literary") {
-      const fileExt = bgImageFile.name.split(".").pop();
-      const fileName = `bg-${Date.now()}.${fileExt}`;
-      const { error: bgUploadError } = await supabase.storage
-        .from("works")
-        .upload(`images/${fileName}`, bgImageFile, {
-          cacheControl: "3600",
-          upsert: false,
+      try {
+        const fileExt = bgImageFile.name.split(".").pop();
+        const fileName = `bg-${Date.now()}.${fileExt}`;
+        const { error: bgUploadError } = await supabase.storage
+          .from("works")
+          .upload(`images/${fileName}`, bgImageFile, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (bgUploadError) {
+          throw bgUploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("works")
+          .getPublicUrl(`images/${fileName}`);
+        bgImageUrl = publicUrl;
+      } catch (bgUploadError) {
+        const reader = new FileReader();
+        bgImageUrl = await new Promise((resolve) => {
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(bgImageFile);
         });
-
-      if (bgUploadError) {
-        setError("背景图片上传失败");
-        setUploading(false);
-        return;
       }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("works")
-        .getPublicUrl(`images/${fileName}`);
-      bgImageUrl = publicUrl;
     }
 
     const { error: updateError } = await supabase
@@ -227,7 +251,7 @@ export default function Admin() {
       .eq("id", editingWork.id);
 
     if (updateError) {
-      setError("更新作品失败");
+      setError(`更新作品失败: ${updateError.message}`);
     } else {
       setEditingWork(null);
       resetForm();
