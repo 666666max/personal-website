@@ -300,7 +300,10 @@ export default function Portfolio() {
                     work.type === "literary" ? "" : ""
                   }`}
                   onClick={() => {
-                    if (work.type === "illustrated") {
+                    if (work.type === "visual" && work.image_url) {
+                      setSelectedImage(work.image_url);
+                      setSelectedWork(work);
+                    } else if (work.type === "illustrated") {
                       setShowIllustratedDetail(work);
                     } else if (work.type === "literary") {
                       setShowLiteraryDetail(work);
