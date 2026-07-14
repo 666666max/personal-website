@@ -105,14 +105,18 @@ export default function Admin() {
           });
 
         if (uploadError) {
+          console.error("Supabase storage upload error:", uploadError);
           throw uploadError;
         }
 
-        const { data: { publicUrl } } = supabase.storage
+        const { data } = supabase.storage
           .from("works")
           .getPublicUrl(`images/${fileName}`);
-        imageUrl = publicUrl;
+        
+        imageUrl = data?.publicUrl;
+        console.log("Image uploaded successfully, URL:", imageUrl);
       } catch (uploadError) {
+        console.warn("Falling back to base64 encoding:", uploadError);
         const reader = new FileReader();
         imageUrl = await new Promise((resolve) => {
           reader.onload = (e) => resolve(e.target?.result as string);
