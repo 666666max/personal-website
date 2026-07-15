@@ -463,14 +463,25 @@ export default function Portfolio() {
               onClick={(e) => e.stopPropagation()}
             >
               {showIllustratedDetail.image_url && (
-                <div className="relative">
+                <div className="relative cursor-pointer group" onClick={() => {
+                  setSelectedImage(showIllustratedDetail.image_url);
+                  setSelectedWork(showIllustratedDetail);
+                }}>
                   <img
                     src={showIllustratedDetail.image_url}
                     alt={showIllustratedDetail.title}
-                    className="w-full h-auto"
+                    className="w-full h-auto transition-transform duration-300 group-hover:scale-[1.02]"
                   />
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                      </svg>
+                    </div>
+                  </div>
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-8">
                     <h2 className="text-white text-3xl font-display font-bold">{showIllustratedDetail.title}</h2>
+                    <p className="text-white/60 text-sm mt-2">点击图片查看大图</p>
                   </div>
                 </div>
               )}
